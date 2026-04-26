@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-// Provide a fallback so Next.js build doesn't crash if the env var is missing during static analysis
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder", {
-  apiVersion: "2023-10-16",
-});
-
 export async function POST(request) {
   try {
+    // Instantiate Stripe inside the handler to prevent build-time evaluation errors on Vercel
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder", {
+      apiVersion: "2023-10-16",
+    });
+
     const body = await request.json();
     const { amount } = body;
 
