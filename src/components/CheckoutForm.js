@@ -49,21 +49,40 @@ export default function CheckoutForm() {
     setError(null);
 
     try {
-      const { error: stripeError, paymentMethod } =
-        await stripe.createPaymentMethod({
-          type: "card",
-          card: elements.getElement(CardElement),
-          billing_details: {
-            name: form.name,
-            email: form.email,
-            address: {
-              line1: form.address,
-              city: form.city,
-              state: form.state,
-              postal_code: form.zip,
+      // 1. Create a PaymentIntent on the backend
+      const res = await fetch("/api/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: total }),
+      });
+      
+      const data = await res.json();
+      
+      if (data.error) {
+        setError(data.error);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Confirm the payment on the client
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
+        data.clientSecret,
+        {
+          payment_method: {
+            card: elements.getElement(CardElement),
+            billing_details: {
+              name: form.name,
+              email: form.email,
+              address: {
+                line1: form.address,
+                city: form.city,
+                state: form.state,
+                postal_code: form.zip,
+              },
             },
           },
-        });
+        }
+      );
 
       if (stripeError) {
         setError(stripeError.message);
@@ -71,7 +90,7 @@ export default function CheckoutForm() {
         return;
       }
 
-      // Generate order number
+      // Generate order number on success
       const order = `NG-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
       setOrderNumber(order);
       setSuccess(true);
