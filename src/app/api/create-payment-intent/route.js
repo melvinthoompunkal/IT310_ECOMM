@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+// Provide a fallback so Next.js build doesn't crash if the env var is missing during static analysis
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder", {
   apiVersion: "2023-10-16",
 });
 
